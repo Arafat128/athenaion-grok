@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { SoftParticlePass } from './softParticles.js';
 
 const GradeShader = {
   uniforms: { tDiffuse: { value: null }, uVignette: { value: 0.28 } },
@@ -36,10 +37,15 @@ const ClampShader = {
     }`,
 };
 
-export function createComposer(renderer, scene, camera, quality, size) {
-  const rt = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: quality.msaa });
+export function createComposer(renderer, scene, camera, quality, size, { soft } = {}) {
+  const rt = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: quality.msaa, depthTexture: new THREE.DepthTexture(size.x, size.y) });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
+  let softPass = null;
+  if (soft) {
+    softPass = new SoftParticlePass(scene, camera, soft, quality.mistScale ?? 0.5);
+    composer.addPass(softPass);
+  }
   composer.addPass(new ShaderPass(ClampShader));
   let bloom = null;
   if (quality.bloom) {
@@ -48,5 +54,5 @@ export function createComposer(renderer, scene, camera, quality, size) {
   }
   composer.addPass(new ShaderPass(GradeShader));
   composer.addPass(new OutputPass());
-  return { composer, bloom };
+  return { composer, bloom, softPass };
 }

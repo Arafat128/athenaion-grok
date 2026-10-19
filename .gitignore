@@ -3,6 +3,14 @@ dist/
 .vite/
 *.log
 .DS_Store
-renders/*-draft*.png
 .scratch/
-renders/lab/
+renders/*
+!renders/vista.png
+!renders/hero.png
+!renders/temple.png
+!renders/statue.png
+!renders/waterfall.png
+!renders/theatre.png
+!renders/agora.png
+!renders/vista-golden.png
+!renders/aerial.png

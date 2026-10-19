@@ -13,7 +13,8 @@ import { createAcropolis } from './modules/architecture/acropolis.js';
 import { createVegetation } from './modules/vegetation/scatter.js';
 import { createLake } from './modules/water/lake.js';
 import { createStream } from './modules/water/stream.js';
-import { waterfallFrame, createWaterfall, createFoam } from './modules/water/waterfall.js';
+import { waterfallFrame, cascadeFrame, createWaterfall, createFoam } from './modules/water/waterfall.js';
+import { createSoftUniforms } from './modules/atmosphere/softParticles.js';
 import { createMist } from './modules/water/mist.js';
 import { createBannerMaterial } from './modules/materials/banner.js';
 
@@ -68,11 +69,22 @@ log('water');
 const lake = createLake(WORLD, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, quality });
 scene.add(lake.mesh);
 scene.add(createStream(field, WORLD, timeUniform));
-const frame = waterfallFrame(field, WORLD);
-scene.add(createWaterfall(frame, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, timeUniform }));
-scene.add(createFoam(frame, { timeUniform, sunColor: ATMOS.sunColor }));
-const mist = createMist(frame, { count: quality.mist, timeUniform, sunColor: ATMOS.sunColor });
-scene.add(mist);
+const light = {
+  uSunColor: { value: ATMOS.sunColor.clone() },
+  uSunDir: { value: SUN_DIR.clone() },
+  uSkyColor: { value: new THREE.Color(0.55, 0.65, 0.85) },
+  uGroundColor: { value: new THREE.Color(0.3, 0.25, 0.17) },
+};
+const soft = createSoftUniforms();
+const mists = [];
+const frames = [waterfallFrame(field, WORLD), cascadeFrame(field, WORLD, { angle: 0.35, y: 74 })];
+frames.forEach((frame, i) => {
+  scene.add(createWaterfall(frame, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, timeUniform }));
+  scene.add(createFoam(frame, { timeUniform, light, radius: i ? 16 : 48 }));
+  const m = createMist(frame, { count: Math.round(quality.mist * (i ? 0.3 : 1)), timeUniform, light, soft, seed: 21 + i, width: frame.width, widthGrow: frame.widthGrow, scale: i ? 0.5 : 1 });
+  mists.push(m);
+  scene.add(m);
+});
 
 log('vegetation');
 const stairs = acropolis.userData.stairs.userData;
@@ -98,7 +110,7 @@ function setView(name) {
 }
 setView(params.get('view') || 'vista');
 
-const { composer } = createComposer(renderer, scene, camera, quality, new THREE.Vector2(width, height).multiplyScalar(renderer.getPixelRatio()));
+const { composer } = createComposer(renderer, scene, camera, quality, new THREE.Vector2(width, height).multiplyScalar(renderer.getPixelRatio()), { soft });
 
 function resize() {
   if (renderMode) return;
@@ -115,7 +127,7 @@ function renderFrame(t) {
   lake.update(t);
   sky.mesh.position.copy(camera.position);
   const px = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
-  mist.userData.setPixel(px);
+  for (const m of mists) m.userData.setPixel(px * (quality.mistScale ?? 0.5));
   composer.render();
 }
 
