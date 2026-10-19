@@ -19,6 +19,7 @@ import { createBirds } from './modules/atmosphere/birds.js';
 import { createDust } from './modules/atmosphere/dust.js';
 import { createMist } from './modules/water/mist.js';
 import { createBannerMaterial } from './modules/materials/banner.js';
+import { createTour, TOUR_ORDER } from './modules/tour.js';
 
 const params = new URLSearchParams(location.search);
 const qualityName = QUALITY[params.get('quality')] ? params.get('quality') : 'high';
@@ -124,6 +125,19 @@ function setView(name) {
 }
 setView(params.get('view') || 'vista');
 
+const tourOn = params.get('tour') === '1';
+const tour = tourOn || params.has('tourAt') ? createTour(field, VIEWS, TOUR_ORDER, { duration: parseFloat(params.get('tourDuration') || 110) }) : null;
+let touring = tourOn;
+const tourStart = performance.now();
+if (tourOn) {
+  controls.enabled = false;
+  const stop = () => { if (!touring) return; touring = false; controls.enabled = true; controls.update(); };
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' || e.key === ' ') stop(); });
+  renderer.domElement.addEventListener('pointerdown', stop);
+  // ?tourAt=<seconds> poses the camera at a fixed point of the tour (useful with ?render).
+  if (params.has('tourAt')) controls.target.copy(tour.apply(camera, parseFloat(params.get('tourAt'))));
+}
+
 const { composer, grade } = createComposer(renderer, scene, camera, quality, new THREE.Vector2(width, height).multiplyScalar(renderer.getPixelRatio()), { soft, sunDir: SUN_DIR, sunColor: ATMOS.sunColor });
 
 function resize() {
@@ -147,8 +161,14 @@ function renderFrame(t) {
   composer.render();
 }
 
+let tourPose = tour;
 window.__athenaion = {
-  setView,
+  // 'tour@<seconds>' poses the camera at that point of the flythrough.
+  setView(name) {
+    if (!name.startsWith('tour@')) return setView(name);
+    tourPose ??= createTour(field, VIEWS, TOUR_ORDER);
+    controls.target.copy(tourPose.apply(camera, parseFloat(name.slice(5))));
+  },
   views: Object.keys(VIEWS),
   render(t = fixedTime ?? 12) {
     controls.update();
@@ -172,7 +192,8 @@ if (renderMode) {
   if (params.get('gui') !== '0') import('./gui.js').then((m) => m.createGui({ renderer, scene, setView, views: VIEWS, qualityName, lights, sky }));
   renderer.setAnimationLoop(() => {
     const t = fixedTime ?? performance.now() / 1000;
-    controls.update();
+    if (touring) controls.target.copy(tour.apply(camera, (performance.now() - tourStart) / 1000 + parseFloat(params.get('tourAt') || 0)));
+    else controls.update();
     renderFrame(t);
   });
   window.__athenaion.ready = true;
