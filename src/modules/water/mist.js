@@ -5,7 +5,7 @@ import { NOISE_GLSL } from '../materials/glsl.js';
 
 const PREMULT = { blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor };
 
-function pointsMaterial({ timeUniform, light, soft, extra, vertexBody, rainbow = 0, density = 1 }) {
+export function pointsMaterial({ timeUniform, light, soft, extra, vertexBody, rainbow = 0, density = 1 }) {
   const uniforms = THREE.UniformsUtils.merge([
     THREE.UniformsLib.fog,
     { uPixel: { value: 1000 }, uRainbow: { value: rainbow }, uDensity: { value: density }, ...extra },
@@ -78,8 +78,7 @@ function pointsMaterial({ timeUniform, light, soft, extra, vertexBody, rainbow =
         }
         vec4 outc = vec4(col, 1.0);
         #ifdef USE_FOG
-        vec4 hf = heightFog(vFogWorld);
-        outc.rgb = mix(outc.rgb, hf.rgb, hf.a);
+        outc.rgb = heightFogApply(outc.rgb, vFogWorld);
         #endif
         gl_FragColor = vec4(outc.rgb * a, a);
       }`,

@@ -5,5 +5,6 @@ export const VIEWS = {
   statue: { pos: [93, 75.5, 57], target: [75, 90, 42], fov: 62, abs: true },
   temple: { pos: [60, 76, 40], target: [-18, 86, -14], fov: 55, abs: true },
   stairs: { pos: [210, 75, 140], target: [180, 40, 2], fov: 60, abs: true },
+  sunrays: { pos: [-120, 8, 120], target: [120, 80, 160], fov: 55 },
   aerial: { pos: [250, 700, 700], target: [-150, 40, 40], fov: 50 },
 };

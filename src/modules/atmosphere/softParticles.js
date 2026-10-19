@@ -25,7 +25,8 @@ float softFade(float viewZ, float range) {
 }`;
 
 export class SoftParticlePass {
-  constructor(scene, camera, soft, scale = 0.5) {
+  constructor(scene, camera, soft, scale = 0.5, depth = null) {
+    this.depth = depth;
     this.scene = scene;
     this.camera = camera;
     this.soft = soft;
@@ -53,7 +54,7 @@ export class SoftParticlePass {
 
   render(renderer, writeBuffer, readBuffer) {
     const s = this.soft;
-    s.tDepth.value = readBuffer.depthTexture;
+    s.tDepth.value = this.depth || readBuffer.depthTexture;
     s.uRes.value.set(this.rt.width, this.rt.height);
     s.uNear.value = this.camera.near;
     s.uFar.value = this.camera.far;

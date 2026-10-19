@@ -5,7 +5,7 @@ import puppeteer from 'puppeteer-core';
 import { serve } from './serve.js';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
-const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? 'true']));
+const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '')).map((a) => { const i = a.indexOf('='); return i < 0 ? [a, 'true'] : [a.slice(0, i), a.slice(i + 1)]; }));
 const width = parseInt(args.w || '1920', 10);
 const height = parseInt(args.h || '1080', 10);
 const quality = args.quality || 'high';

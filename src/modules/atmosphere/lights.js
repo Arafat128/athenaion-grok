@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export function createLights({ sunDir, sunColor, sunIntensity, quality, focus = new THREE.Vector3() }) {
+export function createLights({ sunDir, sunColor, sunIntensity, quality, focus = new THREE.Vector3(), hemiSky = new THREE.Color(0.55, 0.65, 0.85), hemiGround = new THREE.Color(0.3, 0.25, 0.17), hemiIntensity = 0.55 }) {
   const group = new THREE.Group();
   const sun = new THREE.DirectionalLight(sunColor, sunIntensity);
   sun.position.copy(focus).addScaledVector(sunDir, 900);
@@ -13,7 +13,7 @@ export function createLights({ sunDir, sunColor, sunIntensity, quality, focus = 
   s.bias = -0.0004;
   s.normalBias = 0.6;
   group.add(sun, sun.target);
-  const hemi = new THREE.HemisphereLight(new THREE.Color(0.55, 0.65, 0.85), new THREE.Color(0.3, 0.25, 0.17), 0.55);
+  const hemi = new THREE.HemisphereLight(hemiSky, hemiGround, hemiIntensity);
   group.add(hemi);
   return { group, sun, hemi };
 }

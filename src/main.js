@@ -15,6 +15,8 @@ import { createLake } from './modules/water/lake.js';
 import { createStream } from './modules/water/stream.js';
 import { waterfallFrame, cascadeFrame, createWaterfall, createFoam } from './modules/water/waterfall.js';
 import { createSoftUniforms } from './modules/atmosphere/softParticles.js';
+import { createBirds } from './modules/atmosphere/birds.js';
+import { createDust } from './modules/atmosphere/dust.js';
 import { createMist } from './modules/water/mist.js';
 import { createBannerMaterial } from './modules/materials/banner.js';
 
@@ -45,7 +47,7 @@ scene.fog = new THREE.FogExp2(ATMOS.fogColor, ATMOS.fogDensity);
 const camera = new THREE.PerspectiveCamera(50, width / height, 0.5, 30000);
 const timeUniform = { value: 0 };
 
-const sky = createSky({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, zenith: ATMOS.zenith, horizon: ATMOS.horizon, fogColor: ATMOS.fogColor });
+const sky = createSky({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, zenith: ATMOS.zenith, horizon: ATMOS.horizon, fogColor: ATMOS.fogColor, cloudSteps: parseInt(params.get('clouds') ?? quality.clouds, 10) });
 scene.add(sky.mesh);
 scene.environment = sky.bakeEnvironment(renderer);
 scene.environmentIntensity = 0.7;
@@ -56,7 +58,7 @@ const field = createHeightfield(WORLD, { erosion: quality.erosion });
 const terrain = createTerrain(field, { extent: WORLD.extent, segments: quality.terrainSegments, world: WORLD, sunDir: SUN_DIR, sunColor: ATMOS.sunColor });
 scene.add(terrain);
 
-const lights = createLights({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, sunIntensity: ATMOS.sunIntensity, quality, focus: new THREE.Vector3(20, WORLD.acropolis.top, 10) });
+const lights = createLights({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, sunIntensity: ATMOS.sunIntensity, quality, focus: new THREE.Vector3(20, WORLD.acropolis.top, 10), hemiSky: ATMOS.hemiSky, hemiGround: ATMOS.hemiGround, hemiIntensity: ATMOS.hemi });
 scene.add(lights.group);
 
 log('architecture + statue');
@@ -72,8 +74,8 @@ scene.add(createStream(field, WORLD, timeUniform));
 const light = {
   uSunColor: { value: ATMOS.sunColor.clone() },
   uSunDir: { value: SUN_DIR.clone() },
-  uSkyColor: { value: new THREE.Color(0.55, 0.65, 0.85) },
-  uGroundColor: { value: new THREE.Color(0.3, 0.25, 0.17) },
+  uSkyColor: { value: ATMOS.hemiSky.clone() },
+  uGroundColor: { value: ATMOS.hemiGround.clone() },
 };
 const soft = createSoftUniforms();
 const mists = [];
@@ -85,6 +87,18 @@ frames.forEach((frame, i) => {
   mists.push(m);
   scene.add(m);
 });
+
+const nb = quality.birds;
+scene.add(createBirds({ timeUniform, light, flocks: [
+  { x: 10, y: 150, z: 10, r: 120, count: Math.round(nb * 0.45), spread: 30, speed: 14, size: 0.9 },
+  { x: -330, y: 120, z: 150, r: 90, count: Math.round(nb * 0.35), spread: 40, speed: 12, size: 0.8, cw: true },
+  { x: 200, y: 60, z: 60, r: 60, count: Math.round(nb * 0.2), spread: 20, speed: 10, size: 0.6 },
+] }));
+if (quality.dust) {
+  const dust = createDust({ count: quality.dust, timeUniform, light, soft });
+  mists.push(dust);
+  scene.add(dust);
+}
 
 log('vegetation');
 const stairs = acropolis.userData.stairs.userData;
@@ -110,7 +124,7 @@ function setView(name) {
 }
 setView(params.get('view') || 'vista');
 
-const { composer } = createComposer(renderer, scene, camera, quality, new THREE.Vector2(width, height).multiplyScalar(renderer.getPixelRatio()), { soft });
+const { composer, grade } = createComposer(renderer, scene, camera, quality, new THREE.Vector2(width, height).multiplyScalar(renderer.getPixelRatio()), { soft, sunDir: SUN_DIR, sunColor: ATMOS.sunColor });
 
 function resize() {
   if (renderMode) return;
@@ -128,6 +142,7 @@ function renderFrame(t) {
   sky.mesh.position.copy(camera.position);
   const px = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   for (const m of mists) m.userData.setPixel(px * (quality.mistScale ?? 0.5));
+  grade.uniforms.uTime.value = t;
   composer.render();
 }
 

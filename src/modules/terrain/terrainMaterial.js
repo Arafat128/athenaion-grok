@@ -51,12 +51,12 @@ ${erosion ? '#define USE_ERO' : ''}`)
   float varnish = smoothstep(0.45, 0.75, fbm3(vec3(hz.x * 0.12, hz.y * 0.012, 7.0)));
   vec3 rock = mix(rockA, rockB, smoothstep(0.25, 0.75, n2 * 0.5 + fiss * 0.7)) * (0.8 + 0.3 * n3);
   rock *= 1.0 - 0.45 * varnish * smoothstep(0.3, 0.6, slope);
-  rock *= 0.9 + 0.1 * sin(wp.y * 0.6 + fiss * 6.0);
+  rock *= 0.9 + 0.1 * mix(0.0, sin(wp.y * 0.6 + fiss * 6.0), lod);
   rock = mix(rock, vec3(0.3, 0.27, 0.18), smoothstep(0.6, 0.75, fbm3(wp * 0.15 + 9.0)) * 0.35);
   float tilt = wp.y + wp.x * 0.06 - wp.z * 0.035 + (n1 - 0.5) * 60.0;
   float strata = fbm3lo(vec3(tilt * 0.045, 0.5, 2.0)) ;
   float bands = smoothstep(0.35, 0.65, strata) ;
-  rock *= mix(vec3(1.0), vec3(1.12, 1.06, 0.95), bands * 0.6) * (0.92 + 0.12 * sin(tilt * 0.33 + strata * 4.0));
+  rock *= mix(vec3(1.0), vec3(1.12, 1.06, 0.95), bands * 0.6) * (0.92 + 0.12 * mix(0.5, sin(tilt * 0.33 + strata * 4.0), lod));
   vec3 ero = vec3(0.0);
   #ifdef USE_ERO
   ero = texture2D(uEro, (wp.xz + uEroExtent) / (2.0 * uEroExtent)).rgb;
