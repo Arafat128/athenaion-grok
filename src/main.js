@@ -55,7 +55,7 @@ scene.environmentIntensity = 0.7;
 const t0 = performance.now();
 log('terrain');
 const field = createHeightfield(WORLD, { erosion: quality.erosion });
-const terrain = createTerrain(field, { extent: WORLD.extent, segments: quality.terrainSegments, world: WORLD, sunDir: SUN_DIR, sunColor: ATMOS.sunColor });
+const terrain = createTerrain(field, { extent: WORLD.extent, segments: quality.terrainSegments, world: WORLD, sunDir: SUN_DIR, sunColor: ATMOS.sunColor, timeUniform });
 scene.add(terrain);
 
 const lights = createLights({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, sunIntensity: ATMOS.sunIntensity, quality, focus: new THREE.Vector3(20, WORLD.acropolis.top, 10), hemiSky: ATMOS.hemiSky, hemiGround: ATMOS.hemiGround, hemiIntensity: ATMOS.hemi });
@@ -69,7 +69,7 @@ const acropolis = createAcropolis(field, WORLD, { mats, bannerMat, quality, time
 scene.add(acropolis);
 
 log('water');
-const lake = createLake(WORLD, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, quality });
+const lake = createLake(WORLD, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, quality, field });
 scene.add(lake.mesh);
 scene.add(createStream(field, WORLD, timeUniform));
 const light = {
@@ -105,7 +105,7 @@ const stairs = acropolis.userData.stairs.userData;
 const avenues = [{ from: { x: stairs.last.x + 8, z: 2 }, to: { x: stairs.last.x + 260, z: 2 }, spacing: 9, offset: 14 }];
 const clearings = [...Object.values(VIEWS).filter((v) => !v.abs).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 55 })), ...acropolis.userData.clearings];
 const meadows = Object.values(VIEWS).filter((v) => !v.abs && v.pos[1] < 50).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 260 }));
-const vegetation = createVegetation(field, WORLD, quality, { avenues, clearings, meadows, hardClearings: acropolis.userData.clearings });
+const vegetation = createVegetation(field, WORLD, quality, { avenues, clearings, meadows, hardClearings: acropolis.userData.clearings, renderer, timeUniform });
 scene.add(vegetation);
 log(`built in ${(performance.now() - t0).toFixed(0)}ms ${JSON.stringify(vegetation.userData.counts)}`);
 
@@ -139,6 +139,7 @@ function renderFrame(t) {
   timeUniform.value = t;
   sky.uniforms.uTime.value = t;
   lake.update(t);
+  vegetation.userData.update(camera.position);
   sky.mesh.position.copy(camera.position);
   const px = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   for (const m of mists) m.userData.setPixel(px * (quality.mistScale ?? 0.5));

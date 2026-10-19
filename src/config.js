@@ -57,16 +57,16 @@ export const QUALITY = {
   low: {
     pixelRatio: 1, terrainSegments: 384, shadowMap: 1024, cypress: 2500, olive: 1500, shrubs: 3000,
     statueCell: 0.007, mirror: false, bloom: false, mist: 600, msaa: 0,
-    erosion: { size: 384, drops: 50000 }, clouds: 0, godRays: false, ssao: false, birds: 60, dust: 0, houses: 380, figureCell: 0.009,
+    erosion: { size: 384, drops: 50000 }, clouds: 0, godRays: false, ssao: false, birds: 60, dust: 0, houses: 380, figureCell: 0.009, flowers: 2500, treeLod: [220, 700],
   },
   high: {
     pixelRatio: 1, terrainSegments: 768, shadowMap: 4096, cypress: 9000, olive: 5000, shrubs: 12000,
     statueCell: 0.0035, mirror: true, bloom: true, mist: 2000, msaa: 4,
-    erosion: { size: 768, drops: 220000 }, clouds: 18, godRays: true, ssao: true, birds: 140, dust: 1500, houses: 1100, figureCell: 0.006,
+    erosion: { size: 768, drops: 220000 }, clouds: 18, godRays: true, ssao: true, birds: 140, dust: 1500, houses: 1100, figureCell: 0.006, flowers: 9000, treeLod: [380, 1200],
   },
   ultra: {
     pixelRatio: 2, terrainSegments: 1152, shadowMap: 8192, cypress: 16000, olive: 9000, shrubs: 24000,
     statueCell: 0.0025, mirror: true, bloom: true, mist: 4000, msaa: 4,
-    erosion: { size: 1024, drops: 420000 }, clouds: 36, godRays: true, ssao: true, birds: 260, dust: 3000, houses: 1800, figureCell: 0.0045,
+    erosion: { size: 1024, drops: 420000 }, clouds: 36, godRays: true, ssao: true, birds: 260, dust: 3000, houses: 1800, figureCell: 0.0045, flowers: 18000, treeLod: [600, 1800],
   },
 };
