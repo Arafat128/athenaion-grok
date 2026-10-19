@@ -28,13 +28,16 @@ export const QUALITY = {
   low: {
     pixelRatio: 1, terrainSegments: 384, shadowMap: 1024, cypress: 2500, olive: 1500, shrubs: 3000,
     statueCell: 0.007, mirror: false, bloom: false, mist: 600, msaa: 0,
+    erosion: { size: 384, drops: 50000 },
   },
   high: {
     pixelRatio: 1, terrainSegments: 768, shadowMap: 4096, cypress: 9000, olive: 5000, shrubs: 12000,
     statueCell: 0.0035, mirror: true, bloom: true, mist: 2000, msaa: 4,
+    erosion: { size: 768, drops: 220000 },
   },
   ultra: {
     pixelRatio: 2, terrainSegments: 1152, shadowMap: 8192, cypress: 16000, olive: 9000, shrubs: 24000,
     statueCell: 0.0025, mirror: true, bloom: true, mist: 4000, msaa: 4,
+    erosion: { size: 1024, drops: 420000 },
   },
 };

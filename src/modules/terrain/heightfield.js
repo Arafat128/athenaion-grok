@@ -1,7 +1,8 @@
 import { createNoise } from '../utils/noise.js';
+import { erode } from './erosion.js';
 import { clamp, lerp, smoothstep } from '../utils/math.js';
 
-export function createHeightfield(world) {
+export function createHeightfield(world, { erosion = null } = {}) {
   const n = createNoise(world.seed);
   const { acropolis: A, lake: L, mesa: M, waterLevel } = world;
 
@@ -38,8 +39,13 @@ export function createHeightfield(world) {
     const mFactor = smoothstep(800, 3200, d);
     h += mFactor * (260 + 1500 * dirBias * dirBias) * Math.pow(Math.max(ridge, 0), 1.25);
     h += smoothstep(1500, 5000, d) * 260 * (0.6 + 0.4 * dirBias);
+    const sx = wx * 0.0011 + n.noise2(wx * 0.004, wz * 0.004) * 0.6;
+    const strata = Math.abs(n.noise2(sx, wz * 0.0002)) * 2.0;
+    h += mFactor * Math.pow(Math.max(ridge, 0), 2.2) * (n.fbm2(wx * 0.0028, wz * 0.0028, 4) * 180 - 40 * strata);
+    if (eroded) h += eroded.deltaAt(x, z) * smoothstep(650, 1300, d);
     return h;
   }
+  let eroded = null;
 
   const ridgeDir = { x: -0.82, z: -0.57 };
   const ridgeLen = 900;
@@ -96,5 +102,7 @@ export function createHeightfield(world) {
     return { x: nx / l, y: ny / l, z: nz / l };
   }
 
-  return { heightAt, normalAt, acropolisEllipse, lip, lipDir, channelLen, channelDist, channelPoint, noise: n };
+  if (erosion) eroded = erode(base, { size: erosion.size, extent: world.extent * 0.75, drops: erosion.drops });
+
+  return { erosion: eroded, heightAt, normalAt, acropolisEllipse, lip, lipDir, channelLen, channelDist, channelPoint, noise: n };
 }

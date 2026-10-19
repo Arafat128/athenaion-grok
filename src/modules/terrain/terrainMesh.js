@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createTerrainMaterial } from './terrainMaterial.js';
 
-export function createTerrain(field, { extent, segments, world }) {
+export function createTerrain(field, { extent, segments, world, sunDir, sunColor }) {
   const n = segments + 1;
   const pos = new Float32Array(n * n * 3);
   const map = (u) => extent * (0.22 * u + 0.78 * u * u * u);
@@ -29,7 +29,7 @@ export function createTerrain(field, { extent, segments, world }) {
   geo.setIndex(new THREE.BufferAttribute(idx, 1));
   geo.computeVertexNormals();
   geo.computeBoundingSphere();
-  const mesh = new THREE.Mesh(geo, createTerrainMaterial(world));
+  const mesh = new THREE.Mesh(geo, createTerrainMaterial(world, { erosion: field.erosion, sunDir, sunColor }));
   mesh.receiveShadow = true;
   mesh.castShadow = true;
   return mesh;

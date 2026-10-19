@@ -52,8 +52,8 @@ scene.environmentIntensity = 0.7;
 
 const t0 = performance.now();
 log('terrain');
-const field = createHeightfield(WORLD);
-const terrain = createTerrain(field, { extent: WORLD.extent, segments: quality.terrainSegments, world: WORLD });
+const field = createHeightfield(WORLD, { erosion: quality.erosion });
+const terrain = createTerrain(field, { extent: WORLD.extent, segments: quality.terrainSegments, world: WORLD, sunDir: SUN_DIR, sunColor: ATMOS.sunColor });
 scene.add(terrain);
 
 const lights = createLights({ sunDir: SUN_DIR, sunColor: ATMOS.sunColor, sunIntensity: ATMOS.sunIntensity, quality, focus: new THREE.Vector3(20, WORLD.acropolis.top, 10) });
