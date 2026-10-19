@@ -129,6 +129,11 @@ window.__athenaion = {
   },
   ready: false,
   info: () => renderer.info,
+  scene,
+  camera,
+  renderer,
+  composer,
+  THREE,
 };
 
 if (renderMode) {

@@ -14,6 +14,8 @@ const time = args.time || '12';
 const outDir = path.resolve(root, args.out || 'renders');
 const port = parseInt(args.port || '4174', 10);
 const suffix = args.suffix ? `-${args.suffix}` : '';
+const pageName = args.page || '';
+const extra = args.params ? `&${args.params}` : '';
 
 const chromeCandidates = [process.env.CHROME_PATH, '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].filter(Boolean);
@@ -53,7 +55,7 @@ try {
     console.log(`  [pageerror] ${e.message}`);
   });
   await page.setViewport({ width, height, deviceScaleFactor: 1 });
-  const url = `http://localhost:${port}/?render&quality=${quality}&time=${time}&w=${width}&h=${height}&view=${views[0]}`;
+  const url = `http://localhost:${port}/${pageName}?render&quality=${quality}&time=${time}&w=${width}&h=${height}&view=${views[0]}${extra}`;
   console.log(`loading ${url}`);
   const t0 = Date.now();
   await page.goto(url, { waitUntil: 'load', timeout: 0 });
@@ -66,7 +68,7 @@ try {
       window.__athenaion.render(t);
       return window.__athenaion.render(t);
     }, view, parseFloat(time));
-    const file = path.join(outDir, `${view}-${quality}${suffix}.png`);
+    const file = path.join(outDir, `${pageName ? pageName.replace('.html', '') + '-' : ''}${view}-${quality}${suffix}.png`);
     fs.writeFileSync(file, Buffer.from(data.split(',')[1], 'base64'));
     console.log(`wrote ${path.relative(root, file)} (${((Date.now() - t1) / 1000).toFixed(1)}s)`);
   }

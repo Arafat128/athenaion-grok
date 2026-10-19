@@ -22,10 +22,25 @@ const GradeShader = {
     }`,
 };
 
+const ClampShader = {
+  uniforms: { tDiffuse: { value: null }, uMax: { value: 12 } },
+  vertexShader: GradeShader.vertexShader,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse; uniform float uMax; varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      c.rgb = max(c.rgb, 0.0);
+      float l = max(c.r, max(c.g, c.b));
+      c.rgb *= l > uMax ? uMax / l : 1.0;
+      gl_FragColor = c;
+    }`,
+};
+
 export function createComposer(renderer, scene, camera, quality, size) {
   const rt = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: quality.msaa });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new ShaderPass(ClampShader));
   let bloom = null;
   if (quality.bloom) {
     bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.22, 0.65, 1.6);

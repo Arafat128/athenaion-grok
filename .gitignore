@@ -4,3 +4,5 @@ dist/
 *.log
 .DS_Store
 renders/*-draft*.png
+.scratch/
+renders/lab/

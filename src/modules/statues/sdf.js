@@ -36,3 +36,4 @@ export function smin(a, b, k) {
   const h = Math.max(k - Math.abs(a - b), 0) / k;
   return Math.min(a, b) - h * h * k * 0.25;
 }
+export const smax = (a, b, k) => -smin(-a, -b, k);
