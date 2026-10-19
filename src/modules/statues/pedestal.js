@@ -2,13 +2,20 @@ import * as THREE from 'three';
 import { box, merge, prep } from '../architecture/geometry.js';
 
 const GLYPHS = {
-  A: [[0, 0, 0.3, 1], [0.3, 1, 0.6, 0], [0.13, 0.38, 0.47, 0.38]],
-  H: [[0, 0, 0, 1], [0.6, 0, 0.6, 1], [0, 0.5, 0.6, 0.5]],
-  N: [[0, 0, 0, 1], [0, 1, 0.6, 0], [0.6, 0, 0.6, 1]],
-  E: [[0, 0, 0, 1], [0, 1, 0.55, 1], [0, 0.5, 0.45, 0.5], [0, 0, 0.55, 0]],
-  I: [[0.1, 0, 0.1, 1]],
-  K: [[0, 0, 0, 1], [0, 0.5, 0.55, 1], [0, 0.5, 0.55, 0]],
-  Theta: 'ring',
+  Α: [[0, 0, 0.3, 1], [0.3, 1, 0.6, 0], [0.13, 0.38, 0.47, 0.38]],
+  Η: [[0, 0, 0, 1], [0.6, 0, 0.6, 1], [0, 0.5, 0.6, 0.5]],
+  Ν: [[0, 0, 0, 1], [0, 1, 0.6, 0], [0.6, 0, 0.6, 1]],
+  Ε: [[0, 0, 0, 1], [0, 1, 0.55, 1], [0, 0.5, 0.45, 0.5], [0, 0, 0.55, 0]],
+  Ι: [[0.1, 0, 0.1, 1]],
+  Κ: [[0, 0, 0, 1], [0, 0.5, 0.55, 1], [0, 0.5, 0.55, 0]],
+  Ρ: [[0, 0, 0, 1], [0, 1, 0.42, 1], [0.42, 1, 0.55, 0.88], [0.55, 0.88, 0.55, 0.62], [0.55, 0.62, 0.42, 0.5], [0.42, 0.5, 0, 0.5]],
+  Τ: [[0, 1, 0.6, 1], [0.3, 0, 0.3, 1]],
+  Μ: [[0, 0, 0, 1], [0, 1, 0.35, 0.35], [0.35, 0.35, 0.7, 1], [0.7, 1, 0.7, 0]],
+  Σ: [[0.6, 1, 0, 1], [0, 1, 0.3, 0.5], [0.3, 0.5, 0, 0], [0, 0, 0.6, 0]],
+  Δ: [[0, 0, 0.3, 1], [0.3, 1, 0.6, 0], [0, 0, 0.6, 0]],
+  Υ: [[0, 1, 0.3, 0.5], [0.6, 1, 0.3, 0.5], [0.3, 0.5, 0.3, 0]],
+  Θ: 'ring',
+  Ο: 'ring',
 };
 
 function stroke(x0, y0, x1, y1, t, depth) {
@@ -22,17 +29,16 @@ export function inscription(text, { size = 1, depth = 0.05, weight = 0.12 } = {}
   const parts = [];
   let cx = 0;
   for (const ch of text) {
-    const key = ch === 'Θ' ? 'Theta' : ch === 'Α' ? 'A' : ch === 'Η' ? 'H' : ch === 'Ν' ? 'N' : ch === 'Ε' ? 'E' : ch === 'Ι' ? 'I' : ch === 'Κ' ? 'K' : ch;
-    const g = GLYPHS[key];
+    const g = GLYPHS[ch];
     if (g === 'ring') {
       const ring = new THREE.TorusGeometry(0.47, weight * 0.5, 6, 28).scale(0.66, 1, depth / weight);
       parts.push(ring.translate(cx + 0.31, 0.5, depth / 2).scale(size, size, 1));
-      parts.push(stroke(cx + 0.16, 0.5, cx + 0.46, 0.5, weight, depth).scale(size, size, 1));
+      if (ch === 'Θ') parts.push(stroke(cx + 0.16, 0.5, cx + 0.46, 0.5, weight, depth).scale(size, size, 1));
       cx += 0.95;
       continue;
     }
     if (g) for (const [a, b, c, d] of g) parts.push(stroke(cx + a, b, cx + c, d, weight, depth).scale(size, size, 1));
-    cx += g ? 0.95 : 0.6;
+    cx += g ? (ch === 'Μ' ? 1.05 : ch === 'Ι' ? 0.45 : 0.95) : 0.6;
   }
   const geo = merge(parts);
   geo.translate((-cx + 0.35) * size / 2, 0, 0);

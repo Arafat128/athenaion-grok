@@ -28,7 +28,7 @@ function mesh(geo, mat) {
 
 export function buildTemple({
   colsX = 17, colsZ = 8, colH = 10.4, radius = 0.95, spacing = 4.3, steps = 3, stepH = 0.55, stepD = 0.75,
-  pitch = THREE.MathUtils.degToRad(14), cella = true, pronaos = true, mats,
+  pitch = THREE.MathUtils.degToRad(14), cella = true, pronaos = true, mats, pedimentFigure = null,
 }) {
   const g = new THREE.Group();
   const colGeo = createDoricColumn({ height: colH, radius });
@@ -113,13 +113,13 @@ export function buildTemple({
   tymp.lineTo(0, Hp - 0.5);
   tymp.closePath();
   const tympGeo = new THREE.ExtrudeGeometry(tymp, { depth: 0.8, bevelEnabled: false });
-  const ped = [];
+  const ped = [], tymps = [];
   const Ls = W / 2 / Math.cos(pitch) + 0.3;
   for (const sx of [-1, 1]) {
     const t = prep(tympGeo.clone(), 0.35);
     t.rotateY(Math.PI / 2);
     t.translate(sx * (gX / 2 - 0.6) - 0.4, Y3, 0);
-    ped.push(t);
+    tymps.push(t);
     for (const sz of [-1, 1]) {
       const rc = new THREE.BoxGeometry(1.4, hG * 1.1, Ls);
       rc.rotateX(sz * pitch);
@@ -136,6 +136,22 @@ export function buildTemple({
   }
   ped.push(box(roofLen - 1.0, 0.4, 0.5, 0, Y3 + Hp + 0.3, 0));
   g.add(mesh(merge(ped), mats.roof || mats.marble));
+  g.add(mesh(merge(tymps), mats.navy));
+  if (pedimentFigure) {
+    const figs = [], gilt = [];
+    const n = Math.max(3, Math.floor(W / 2.6)) | 1;
+    for (const sx of [-1, 1]) {
+      for (let i = 0; i < n; i++) {
+        const z = (i / (n - 1) - 0.5) * (W - 3.6);
+        const hh = (Hp - 0.9) * (1 - Math.abs(z) / (W / 2)) * 0.92;
+        if (hh < 0.9) continue;
+        const t = [sx * (gX / 2 - 0.05), Y3 + 0.1, z, sx > 0 ? Math.PI / 2 : -Math.PI / 2, hh];
+        (i === (n - 1) / 2 ? gilt : figs).push(t);
+      }
+    }
+    g.add(instanced(pedimentFigure, mats.statue || mats.marble, figs));
+    if (gilt.length) g.add(instanced(pedimentFigure, mats.gold, gilt));
+  }
 
   const antefix = createPalmette({ height: 0.75, leaves: 7, depth: 0.05 });
   const ants = [];

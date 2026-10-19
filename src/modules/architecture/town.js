@@ -4,25 +4,48 @@ import { RNG } from '../utils/rng.js';
 const tmp = new THREE.Object3D();
 const col = new THREE.Color();
 
-export function createTown(field, world, { count = 500, wallMat, roofMat, clearings = [] }) {
+export function createTown(field, world, { count = 500, wallMat, roofMat, podiumMat = wallMat, clearings = [] }) {
   const rng = new RNG(world.seed + 5);
   const homes = [];
   let tries = 0;
-  while (homes.length < count && tries++ < count * 60) {
+  while (homes.length < count && tries++ < count * 80) {
     const a = rng.float(0, Math.PI * 2);
-    const e = 1.3 + Math.pow(rng.next(), 1.3) * 1.6;
+    const e = 1.25 + Math.pow(rng.next(), 1.15) * 2.1;
     const x = world.acropolis.x + Math.cos(a) * world.acropolis.rx * e;
     const z = world.acropolis.z + Math.sin(a) * world.acropolis.rz * e;
     const h = field.heightAt(x, z);
     if (h < world.waterLevel + 2.5) continue;
-    if (field.normalAt(x, z, 4).y < 0.93) continue;
+    const ny = field.normalAt(x, z, 4).y;
+    if (ny < 0.8) continue;
     if (clearings.some((c) => Math.hypot(x - c.x, z - c.z) < c.r)) continue;
-    if (field.noise.fbm2(x * 0.012, z * 0.012, 2) < 0.02) continue;
-    const w = rng.float(3.5, 7), d = rng.float(3.5, 6), ht = rng.float(2.8, 4.8);
-    if (homes.some((o) => Math.abs(o.x - x) < (o.w + w) * 0.6 && Math.abs(o.z - z) < (o.d + d) * 0.6)) continue;
-    const toCenter = Math.atan2(world.acropolis.x - x, world.acropolis.z - z);
-    homes.push({ x, z, y: h, w, d, ht, rot: toCenter + rng.float(-0.25, 0.25) });
+    if (field.noise.fbm2(x * 0.012, z * 0.012, 2) < -0.05) continue;
+    const r = rng.next();
+    const type = r < 0.3 ? 'court' : r < 0.55 ? 'L' : 'block';
+    const w = type === 'court' ? rng.float(9, 13) : rng.float(4, 8), d = type === 'court' ? rng.float(9, 12) : rng.float(3.8, 6.5);
+    const ht = rng.next() < 0.3 ? rng.float(5.6, 7.2) : rng.float(2.8, 4.4);
+    if (homes.some((o) => Math.abs(o.x - x) < (o.w + w) * 0.58 && Math.abs(o.z - z) < (o.d + d) * 0.58)) continue;
+    const rot = Math.atan2(world.acropolis.x - x, world.acropolis.z - z) + rng.float(-0.2, 0.2);
+    let lo = h, hi = h;
+    for (const [u, v] of [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]) {
+      const hx = field.heightAt(x + Math.cos(rot) * u * w + Math.sin(rot) * v * d, z - Math.sin(rot) * u * w + Math.cos(rot) * v * d);
+      lo = Math.min(lo, hx); hi = Math.max(hi, hx);
+    }
+    homes.push({ x, z, y: hi, lo, w, d, ht, rot, type });
   }
+  const parts = [], podia = [];
+  for (const o of homes) {
+    const wings = o.type === 'court'
+      ? [[0, -0.5 + 0.17, 1, 0.34], [0, 0.5 - 0.12, 1, 0.24], [-0.5 + 0.13, 0, 0.26, 1], [0.5 - 0.13, 0, 0.26, 1]]
+      : o.type === 'L' ? [[0, -0.2, 1, 0.6], [0.32, 0.25, 0.36, 0.9]] : [[0, 0, 1, 1]];
+    wings.forEach(([u, v, sw, sd], k) => {
+      const cx = o.x + Math.cos(o.rot) * u * o.w + Math.sin(o.rot) * v * o.d;
+      const cz = o.z - Math.sin(o.rot) * u * o.w + Math.cos(o.rot) * v * o.d;
+      parts.push({ x: cx, z: cz, y: o.y, w: o.w * sw, d: o.d * sd, ht: o.ht * (k === 0 ? 1 : 0.8), rot: o.rot });
+    });
+    if (o.y - o.lo > 1.2) podia.push(o);
+  }
+  homes.length = 0;
+  homes.push(...parts);
   const houseMat = wallMat.clone();
   const baseCompile = wallMat.onBeforeCompile;
   houseMat.onBeforeCompile = (shader, r) => {
@@ -64,11 +87,21 @@ export function createTown(field, world, { count = 500, wallMat, roofMat, cleari
     col.setRGB(1, 1, 1).multiplyScalar(rng.float(0.75, 1.1));
     roofs.setColorAt(i, col);
   });
-  for (const m of [walls, roofs]) {
+  const pod = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), podiumMat, Math.max(1, podia.length));
+  podia.forEach((o, i) => {
+    tmp.position.set(o.x, o.lo - 1, o.z);
+    tmp.rotation.set(0, o.rot, 0);
+    tmp.scale.set(o.w * 1.08, o.y - o.lo + 1.05, o.d * 1.08);
+    tmp.updateMatrix();
+    pod.setMatrixAt(i, tmp.matrix);
+  });
+  pod.count = podia.length;
+  for (const m of [walls, roofs, pod]) {
     m.castShadow = true;
     m.receiveShadow = true;
   }
   const g = new THREE.Group();
-  g.add(walls, roofs);
+  g.add(walls, roofs, pod);
+  g.userData.count = homes.length;
   return g;
 }

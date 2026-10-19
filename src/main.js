@@ -64,7 +64,8 @@ scene.add(lights.group);
 log('architecture + statue');
 const mats = createMaterials(WORLD);
 const bannerMat = createBannerMaterial(timeUniform);
-const acropolis = createAcropolis(field, WORLD, { mats, bannerMat, quality, clearings: Object.values(VIEWS).filter((v) => !v.abs).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 40 })) });
+const soft = createSoftUniforms();
+const acropolis = createAcropolis(field, WORLD, { mats, bannerMat, quality, timeUniform, soft, clearings: Object.values(VIEWS).filter((v) => !v.abs).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 40 })) });
 scene.add(acropolis);
 
 log('water');
@@ -77,8 +78,7 @@ const light = {
   uSkyColor: { value: ATMOS.hemiSky.clone() },
   uGroundColor: { value: ATMOS.hemiGround.clone() },
 };
-const soft = createSoftUniforms();
-const mists = [];
+const mists = [acropolis.userData.flames];
 const frames = [waterfallFrame(field, WORLD), cascadeFrame(field, WORLD, { angle: 0.35, y: 74 })];
 frames.forEach((frame, i) => {
   scene.add(createWaterfall(frame, { sunDir: SUN_DIR, sunColor: ATMOS.sunColor, timeUniform }));
@@ -105,7 +105,7 @@ const stairs = acropolis.userData.stairs.userData;
 const avenues = [{ from: { x: stairs.last.x + 8, z: 2 }, to: { x: stairs.last.x + 260, z: 2 }, spacing: 9, offset: 14 }];
 const clearings = [...Object.values(VIEWS).filter((v) => !v.abs).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 55 })), ...acropolis.userData.clearings];
 const meadows = Object.values(VIEWS).filter((v) => !v.abs && v.pos[1] < 50).map((v) => ({ x: v.pos[0], z: v.pos[2], r: 260 }));
-const vegetation = createVegetation(field, WORLD, quality, { avenues, clearings, meadows });
+const vegetation = createVegetation(field, WORLD, quality, { avenues, clearings, meadows, hardClearings: acropolis.userData.clearings });
 scene.add(vegetation);
 log(`built in ${(performance.now() - t0).toFixed(0)}ms ${JSON.stringify(vegetation.userData.counts)}`);
 

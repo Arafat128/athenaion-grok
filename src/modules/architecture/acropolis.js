@@ -5,8 +5,13 @@ import { createBannerPoles, createHangingBanners } from './banners.js';
 import { createAthena } from '../statues/athena.js';
 import { createTown } from './town.js';
 import { box, merge } from './geometry.js';
+import { createErechtheion } from './erechtheion.js';
+import { createTheatre } from './theatre.js';
+import { createAgora } from './agora.js';
+import { createBraziers } from './brazier.js';
+import { figureGeometry } from '../statues/caryatid.js';
 
-export function createAcropolis(field, world, { mats, bannerMat, quality, clearings = [] }) {
+export function createAcropolis(field, world, { mats, bannerMat, quality, clearings = [], timeUniform, soft }) {
   const A = world.acropolis;
   const group = new THREE.Group();
   const Y = A.top;
@@ -17,12 +22,14 @@ export function createAcropolis(field, world, { mats, bannerMat, quality, cleari
     box(34, 0.6, 34, A.x + 75, Y + 0.06, A.z + 42),
     box(44, 0.6, 34, A.x - 98, Y + 0.05, A.z + 30),
     box(60, 0.6, 9, A.x - 45, Y + 0.04, A.z + 20, 0),
+    box(34, 0.6, 30, A.x + 52, Y + 0.05, A.z - 48),
   ]);
   const pave = new THREE.Mesh(paveGeo, mats.paving);
   pave.receiveShadow = true;
   group.add(pave);
 
-  const parthenon = buildTemple({ colsX: 17, colsZ: 8, mats });
+  const pedimentFigure = figureGeometry('kore', quality.figureCell);
+  const parthenon = buildTemple({ colsX: 17, colsZ: 8, mats, pedimentFigure });
   parthenon.position.set(A.x - 18, Y + 0.3, A.z - 14);
   group.add(parthenon);
 
@@ -39,6 +46,15 @@ export function createAcropolis(field, world, { mats, bannerMat, quality, cleari
   zeus.position.set(A.x - 98, Y + 0.3, A.z + 30);
   zeus.rotation.y = -0.05;
   group.add(zeus);
+
+  const erech = createErechtheion({ mats, cell: quality.figureCell, pedimentFigure });
+  erech.position.set(A.x + 50, Y + 0.3, A.z - 50);
+  group.add(erech);
+
+  const theatre = createTheatre(world.theatre, { mats });
+  group.add(theatre);
+  const agora = createAgora(world.agora, { mats, cell: quality.figureCell });
+  group.add(agora);
 
   const athena = createAthena({ height: 22, cell: quality.statueCell, mats });
   athena.position.set(A.x + 75, Y + 0.3, A.z + 42);
@@ -65,7 +81,19 @@ export function createAcropolis(field, world, { mats, bannerMat, quality, cleari
     poles.push({ x: athena.position.x + lx * ca + lz * sa, y: Y + 0.3, z: athena.position.z - lx * sa + lz * ca, rot: athena.rotation.y });
   }
   for (const dz of [-16, 16]) poles.push({ x: A.x + 132, y: Y + 0.3, z: A.z + 2 + dz, rot: Math.PI / 2, scale: 1.2 });
+  poles.push(...agora.userData.banners);
   group.add(createBannerPoles(poles, { mats, bannerMat }));
+
+  const T = world.theatre;
+  const fires = [
+    ...[[-14, 10], [14, 10], [-14, -6], [14, -6]].map(([lx, lz]) => ({ x: athena.position.x + lx * ca + lz * sa, y: Y + 0.3, z: athena.position.z - lx * sa + lz * ca, scale: 1.3 })),
+    ...[-9, 9].map((dz) => ({ x: parthenon.position.x + parthenon.userData.length / 2 + 4, y: Y + 0.35, z: parthenon.position.z + dz, scale: 1.2 })),
+    ...[-7, 7].map((dz) => ({ x: A.x + 112, y: Y + 0.35, z: A.z + 2 + dz })),
+    ...[-1, 1].map((sx) => ({ x: T.x + sx * (T.r0 + 2), y: T.y + 0.3, z: T.z + T.r0 * 0.4 })),
+    ...agora.userData.braziers,
+  ];
+  const braziers = createBraziers(fires, { mats, timeUniform, soft, perFlame: quality.flame ?? 36 });
+  group.add(braziers);
 
   const pd = parthenon.userData;
   const hang = [];
@@ -79,9 +107,17 @@ export function createAcropolis(field, world, { mats, bannerMat, quality, cleari
     hang.push({ x, y: colTopY, z: parthenon.position.z + pd.Lz / 2 + 0.2, rot: 0 });
   }
   group.add(createHangingBanners(hang, { bannerMat, width: 2.2, height: 6.5 }));
+  const drapes = [];
+  for (const i of [0, 2, 4, 6]) {
+    const z = parthenon.position.z - pd.Lz / 2 + (i + 0.5) * 4.3;
+    drapes.push({ x: parthenon.position.x + pd.Lx / 2 + 0.25, y: colTopY, z, rot: Math.PI / 2 });
+  }
+  const pp = propylaea.userData;
+  for (const i of [0, 2, 3, 5]) drapes.push({ x: propylaea.position.x + pp.Lx / 2 + 0.2, y: propylaea.position.y + 1.65 + 8.6 * 1.09 - 0.1, z: propylaea.position.z - pp.Lz / 2 + (i + 0.5) * 3.9, rot: Math.PI / 2 });
+  group.add(createHangingBanners(drapes, { bannerMat, width: 1.5, height: 10.5 }));
 
-  group.add(createTown(field, world, { count: quality.cypress > 5000 ? 700 : 300, wallMat: mats.plaster, roofMat: mats.tile, clearings: [...clearings, ...corridor] }));
+  group.add(createTown(field, world, { count: quality.houses, wallMat: mats.plaster, roofMat: mats.tile, podiumMat: mats.ashlar, clearings: [...clearings, ...corridor, theatre.userData.clearing, agora.userData.clearing] }));
 
-  group.userData = { parthenon, athena, propylaea, stairs, clearings: corridor };
+  group.userData = { parthenon, athena, propylaea, stairs, erech, theatre, agora, flames: braziers.userData.flames, clearings: [...corridor, theatre.userData.clearing, agora.userData.clearing] };
   return group;
 }

@@ -63,7 +63,7 @@ function avenue(field, from, to, spacing, offset) {
   return pts;
 }
 
-export function createVegetation(field, world, quality, { avenues = [], clearings = [], meadows = [] } = {}) {
+export function createVegetation(field, world, quality, { avenues = [], clearings = [], meadows = [], hardClearings = [] } = {}) {
   const rng = new RNG(world.seed + 77);
   const group = new THREE.Group();
   const foliage = createFoliageMaterial();
@@ -78,7 +78,7 @@ export function createVegetation(field, world, quality, { avenues = [], clearing
   const grassPts = [];
   const per = Math.round((quality.shrubs * 6) / Math.max(1, meadows.length));
   for (const m of meadows) {
-    grassPts.push(...place(field, world, per, rng, { ...base, clearings: [], cx: m.x, cz: m.z, radius: m.r, falloff: 1.2, maxH: 400, minNy: 0.75, densLo: 0.15, densHi: 0.55, densSeed: 91, densFreq: 0.02 }));
+    grassPts.push(...place(field, world, per, rng, { ...base, clearings: hardClearings, cx: m.x, cz: m.z, radius: m.r, falloff: 1.2, maxH: 400, minNy: 0.75, densLo: 0.15, densHi: 0.55, densSeed: 91, densFreq: 0.02 }));
   }
   const grassMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
   const grass = build(createGrassTuftGeometry(), grassMat, grassPts.map(([x, y, z]) => [x, y + 0.25, z]), rng, [0.5, 1.1], [1, 1, 1]);

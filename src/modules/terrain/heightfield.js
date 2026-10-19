@@ -4,7 +4,7 @@ import { clamp, lerp, smoothstep } from '../utils/math.js';
 
 export function createHeightfield(world, { erosion = null } = {}) {
   const n = createNoise(world.seed);
-  const { acropolis: A, lake: L, mesa: M, waterLevel } = world;
+  const { acropolis: A, lake: L, mesa: M, waterLevel, theatre: T, agora: G } = world;
 
   const toLake = { x: L.x - M.x, z: L.z - M.z };
   const tl = Math.hypot(toLake.x, toLake.z);
@@ -90,6 +90,21 @@ export function createHeightfield(world, { erosion = null } = {}) {
       const terr = 11 * (Math.floor(tq) + smoothstep(0.3, 0.7, tq - Math.floor(tq))) - n.noise2(x * 0.02, z * 0.02) * 6.6;
       hv = lerp(hv, terr, 0.55 * Math.min(1, mm * (1 - mm) * 4) * nearLip);
       h = Math.max(h, hv);
+    }
+    if (T) {
+      const dx = x - T.x, dz = z - T.z, r = Math.hypot(dx, dz);
+      if (r < T.r1 + 40) {
+        const ang = Math.abs(Math.atan2(dx, -dz));
+        const bowl = T.y + Math.max(0, r - T.r0) * T.slope;
+        const m = (1 - smoothstep(T.r1, T.r1 + 16, r)) * (1 - smoothstep(T.span - 0.05, T.span + 0.35, ang));
+        h = lerp(h, bowl, m);
+        const stage = Math.max(1 - smoothstep(T.r0 + 2, T.r0 + 10, r), (1 - smoothstep(30, 44, Math.abs(dx))) * smoothstep(-6, 0, dz) * (1 - smoothstep(26, 40, dz)));
+        h = lerp(h, T.y, stage);
+      }
+    }
+    if (G) {
+      const ex = Math.max(Math.abs(x - G.x) - G.w / 2, 0), ez = Math.max(Math.abs(z - G.z) - G.d / 2, 0);
+      h = lerp(h, G.y, 1 - smoothstep(0, 28, Math.hypot(ex, ez)));
     }
     return h;
   }
