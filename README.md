@@ -10,7 +10,22 @@ npm run dev                # http://localhost:5173
 npm run build && npm run serve   # static server for dist/ on http://localhost:4173
 ```
 
-URL params: `?quality=low|high|ultra`, `?view=vista|hero|waterfall|statue|temple|aerial|stairs`, `?time=12` (freeze animation), `?exposure=0.62`, `?w=&h=` (fixed canvas size), `?gui=0` (hide lil-gui).
+Also open `/lab.html` for the statue lab (`?view=full|face|helmet|owl|pedestal|chest`).
+
+### URL params
+
+| Param | Values | Notes |
+| --- | --- | --- |
+| `quality` | `low`, `high` (default), `ultra` | erosion grid, cloud steps, SSAO, god rays, tree/house/flower counts, LOD distances, figure bake resolution. Ultra is heavy. |
+| `view` | `vista`, `hero`, `waterfall`, `statue`, `temple`, `stairs`, `sunrays`, `theatre`, `agora`, `aerial` | preset camera |
+| `tod` | `day` (default), `noon`, `golden` | sun position, light, fog and sky colours |
+| `tour` | `1` | looping spline flythrough of all views; click, Space or Esc hands control back |
+| `tourDuration`, `tourAt` | seconds | tour loop length (default 110) and start offset |
+| `clouds` | integer | raymarch steps for the cumulus layer (0 disables it) |
+| `time` | seconds | freeze animation at that time |
+| `exposure` | e.g. `0.62` | tone-mapping exposure |
+| `w`, `h` | pixels | fixed canvas size |
+| `gui` | `0` | hide lil-gui |
 
 ## Render stills
 
@@ -19,7 +34,17 @@ npm run build
 npm run render -- --quality=high --views=vista,hero,waterfall --w=1920 --h=1080
 ```
 
-Uses puppeteer-core with a local Chrome/Chromium (`CHROME_PATH` to override). SwiftShader by default; add `--gpu=true` to use the real GPU. Output goes to `renders/<view>-<quality>[-suffix].png`. Options: `--out`, `--suffix`, `--time`, `--port`.
+Uses puppeteer-core with a local Chrome/Chromium (`CHROME_PATH` to override). SwiftShader by default; add `--gpu=true` to use the real GPU. Output goes to `renders/[page-]<view>-<quality>[-suffix].png`. Options: `--out`, `--suffix`, `--time`, `--port`, `--page=lab.html`, `--params=tod=golden&clouds=24` (extra URL params). A view of `tour@<seconds>` poses the camera on the flythrough. Only the final stills (`renders/vista.png`, `hero`, `temple`, `statue`, `waterfall`, `theatre`, `agora`, `vista-golden`, `aerial`) are tracked; everything else in `renders/` is gitignored.
+
+## Features
+
+- **Statue**: Athena Parthenos baked from SDFs with high-res detail boxes (face, Corinthian helmet, gorgoneion aegis with snakes, owls, gold hems) and an inscribed, meander-banded pedestal. Caryatids and korai reuse the SDF figure kit.
+- **City**: Parthenon with navy-painted tympana, marble pediment figures with a gilt centre, owl banners and long drapes; Propylaea, Nike temple, Zeus temple, Erechtheion with a six-caryatid porch; a theatre carved into the hillside (tiered cavea, aisles, orchestra, skene); an agora with two stoas, an altar and six labelled statues on plinths; bronze braziers with flickering soft-particle flames and ground glow; a dense terraced town of block, L and courtyard houses on ashlar podia.
+- **Terrain**: fBm + ridged mountains with hydraulic droplet and thermal erosion, strata, gullies, scree, wind-blown sparkling snow, LOD-faded micro detail and underwater caustics.
+- **Vegetation**: clumped Italian cypress, gnarled split-trunk olives with silvery sheen, shrubs, grass and four kinds of wildflower drifts. All of it sways in travelling wind gusts. Trees use three LODs; the far one is a runtime-baked albedo and normal-map impostor.
+- **Water**: Water.js mirror lake with baked depth (shallow tint, transparency, animated shoreline foam), flow-mapped stream with bank foam, two waterfalls with plunge foam and lit soft-particle mist and spray (Henyey-Greenstein scattering, rainbow hint).
+- **Atmosphere**: raymarched cumulus with a cirrus layer, Rayleigh/Mie-style height fog, god rays, GTAO, bloom with HDR clamp, filmic grade, bird flocks, dust motes and time-of-day presets.
+- **Camera**: preset views and a `?tour=1` centripetal Catmull-Rom flythrough.
 
 ## Structure
 
@@ -33,14 +58,17 @@ src/
   gui.js         lil-gui panel (views, sun, exposure, quality)
   modules/
     utils/        rng (seeded mulberry32), noise (value/perlin, fBm, ridged), math
-    terrain/      heightfield (fBm + ridged mountains, acropolis plateau, mesa cliff, lake basin, terraced cliffs),
+    terrain/      heightfield (fBm + ridged mountains, acropolis, mesa, lake, theatre bowl, agora), erosion (hydraulic + thermal),
                   terrainMesh (non-uniform LOD grid), terrainMaterial (grass/dirt/rock/snow by height+slope, triplanar-ish fissures, bump)
     architecture/ column (fluted Doric, entasis, echinus, abacus), temple (stylobate, peristyle, entablature, triglyphs, pediment,
-                  roof, gold acroteria/shields), ornaments, walls (terrain-following circuit wall, stairway), banners, town, acropolis (assembly)
-    statues/      sdf primitives, athenaSdf (marble + gold fields), surfaceNets mesher, bakeSdf (gradient normals, cavity AO), athena
-    vegetation/   treeGeometry (cypress, olive, shrub, grass tuft), foliageMaterial, scatter (slope/height/noise density, clearings)
+                  roof, pediment sculpture), ornaments, walls, banners, town, theatre, stoa, agora, erechtheion, brazier, acropolis (assembly)
+    statues/      sdf primitives, figure + athenaSdf, caryatid (kore/caryatid kit), surfaceNets mesher, bakeSdf (+ detail boxes), pedestal, athena
+    vegetation/   treeGeometry (clumped cypress, gnarled olive, shrub, grass, wildflowers), foliageMaterial, wind (vertex sway),
+                  impostor (baked albedo+normal billboards), scatter (density rules, clearings, distance LOD)
     water/        lake (Water.js mirror with procedural normals, or cheap PBR fallback), stream, waterfall (scrolling foam), mist (instanced spray)
-    atmosphere/   sky (procedural dome + baked env map for IBL), lights (sun with shadows, hemisphere), fog (exponential height fog), post (bloom, grade, ACES output)
+    atmosphere/   sky (dome, raymarched clouds, env bake), lights, fog (height fog, aerial perspective), softParticles, birds, dust,
+                  post (scene+depth, GTAO, soft particles, god rays, clamp, bloom, grade)
+    tour.js       spline flythrough
     materials/    marble (veining, weathering, streaks, lichen, cavity dirt), gold, stone (ashlar), banner (waving cloth), owlEmblem (canvas), waterNormals, glsl helpers
 tools/
   serve.js   plain node static server
@@ -49,19 +77,19 @@ tools/
 
 ## Known limitations
 
-- Single heightfield mesh, no chunking or streaming; far mountains are low frequency and a bit uniform.
-- Statue is SDF-baked at moderate resolution. The face and drapery are stylized, and the spear is separate geometry.
-- Vegetation is low-poly instanced geometry with no billboards/impostors; cypresses read slightly smooth up close.
-- Mist is a soft particle cloud with no lighting, and it can bloom hot against bright sky.
-- SwiftShader renders take about 30 to 40 s per high-quality frame.
+- One heightfield mesh with no chunking. Erosion only runs inside a central grid.
+- Waterfall mist reads as a soft cotton-ball volume from far or high above.
+- Impostors bake a single side view, so they don't swing correctly from steep top-down angles. Shadows ignore wind sway.
+- Town houses are boxes with tile-coloured roofs, without proper ridged roof geometry. Roads aren't modelled.
+- The tour clamps height above terrain but doesn't avoid buildings or trees.
+- SwiftShader renders take about 30 to 60 s per high-quality 1080p frame plus about 45 s of scene build. Ultra is much slower.
 
 ## Roadmap (prioritized)
 
-1. Hydraulic/thermal erosion pass on the heightfield; carved river from waterfall to lake.
-2. Terrain chunking + LOD (CDLOD/quadtree) and GPU-side heightfield for a larger world.
-3. Statue detail: higher-res sparse SDF bake, sculpted face, deeper drapery, relief pedestal; more statues (kouroi, caryatids).
-4. City expansion: agora, stoa, theatre, roads, Erechtheion with Ionic columns, procedural weathering per building.
-5. Volumetric clouds and god rays; lit mist with depth-aware soft particles.
-6. Vegetation impostors, wind animation, and denser grass via GPU instancing.
-7. Offline path-traced mode via three-gpu-pathtracer for hero stills.
-8. Time-of-day and weather presets; cinematic camera paths and video capture.
+1. Terrain chunking + CDLOD and a GPU heightfield for a larger world; extend erosion to the whole map.
+2. Volumetric, raymarched mist for the plunge pool; wet-rock darkening.
+3. Ridged roof tiles, roads and per-building weathering; Ionic order for the Erechtheion.
+4. Multi-angle (octahedral) impostors; wind-aware shadow depth materials.
+5. Path-traced hero stills; video capture of the tour.
+6. Weather presets (storm, haze, night with lit braziers).
+

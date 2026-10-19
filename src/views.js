@@ -8,5 +8,5 @@ export const VIEWS = {
   sunrays: { pos: [-120, 8, 120], target: [120, 80, 160], fov: 55 },
   theatre: { pos: [-38, 48, 118], target: [14, 17, 182], fov: 55, abs: true },
   agora: { pos: [196, 26, -72], target: [278, 14, -158], fov: 55, abs: true },
-  aerial: { pos: [250, 700, 700], target: [-150, 40, 40], fov: 50 },
+  aerial: { pos: [430, 270, 560], target: [-40, 50, 30], fov: 50, abs: true },
 };
