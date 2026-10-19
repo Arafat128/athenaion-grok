@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { patchWorld } from '../materials/glsl.js';
 
-export function createTerrainMaterial(world, { erosion = null, sunDir, sunColor } = {}) {
+export function createTerrainMaterial(world, { erosion = null, sunDir, sunColor, timeUniform = { value: 0 } } = {}) {
   const A = world.acropolis;
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
   let tex = null;
@@ -15,6 +15,7 @@ export function createTerrainMaterial(world, { erosion = null, sunDir, sunColor 
     uEroExtent: { value: erosion ? erosion.extent : 1 },
     uSunDirT: { value: sunDir ? sunDir.clone() : new THREE.Vector3(0, 1, 0) },
     uSunColT: { value: sunColor ? sunColor.clone() : new THREE.Color(1, 1, 1) },
+    uTimeT: timeUniform,
   };
   mat.customProgramCacheKey = () => `terrain:${!!erosion}`;
   mat.onBeforeCompile = (shader) => {
@@ -25,6 +26,7 @@ export function createTerrainMaterial(world, { erosion = null, sunDir, sunColor 
 uniform sampler2D uEro;
 uniform float uEroExtent;
 uniform vec3 uSunDirT, uSunColT;
+uniform float uTimeT;
 ${erosion ? '#define USE_ERO' : ''}`)
       .replace(
         '#include <color_fragment>',
@@ -73,6 +75,20 @@ ${erosion ? '#define USE_ERO' : ''}`)
   col = mix(col, vec3(0.42, 0.37, 0.28) * (0.8 + 0.3 * n3), shore);
   col = mix(col, vec3(0.18, 0.16, 0.12), 1.0 - smoothstep(${(world.waterLevel - 3).toFixed(2)}, ${world.waterLevel.toFixed(2)}, wp.y));
   col = mix(col, rock, rockMask);
+  {
+    // Underwater: depth tint plus animated caustic network (two drifting ridged-noise layers).
+    float depthW = ${world.waterLevel.toFixed(2)} - wp.y;
+    float uw = smoothstep(-0.2, 0.3, depthW);
+    if (uw > 0.0) {
+      vec2 cp = wp.xz * 0.32;
+      float r1 = 1.0 - abs(vnoise(vec3(cp, uTimeT * 0.35)) * 2.0 - 1.0);
+      float r2 = 1.0 - abs(vnoise(vec3(cp * 1.37 + 5.1, uTimeT * 0.29 + 3.0)) * 2.0 - 1.0);
+      float caus = pow(r1, 7.0) + pow(r2, 7.0) * 0.8;
+      float att = exp(-max(depthW, 0.0) * 0.22);
+      col = mix(col, col * vec3(0.55, 0.8, 0.85), uw * (1.0 - att));
+      col *= 1.0 + uw * caus * 2.2 * att * lod;
+    }
+  }
   col = mix(col, screeCol, scree * smoothstep(0.12, 0.3, slope) * (1.0 - smoothstep(0.55, 0.75, slope)) * smoothstep(150.0, 400.0, wp.y) * 0.85);
   col = mix(col, grassA * 0.9, gully * (1.0 - smoothstep(300.0, 700.0, wp.y)) * 0.5);
   vec2 ae = (wp.xz - vec2(${A.x.toFixed(1)}, ${A.z.toFixed(1)})) / vec2(${A.rx.toFixed(1)}, ${A.rz.toFixed(1)});
