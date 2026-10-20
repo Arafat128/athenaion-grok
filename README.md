@@ -1,6 +1,51 @@
-# Athenaion
+<div align="center">
 
-A procedural ancient Greek world in Three.js with **zero external assets**. Every mesh, texture and shader is generated in code: noise heightfields, SDF statues baked to mesh, instanced vegetation, canvas-drawn banners, DataTexture water normals and GLSL materials.
+# 🏛️ Athenaion
+
+### An ancient Greek world, built entirely by Grok
+
+**Every mountain, temple, statue, tree, waterfall and cloud here is generated in code.**
+**There are zero external assets: no models, textures, HDRIs or images.**
+
+![Three.js](https://img.shields.io/badge/Three.js-procedural-black?logo=three.js)
+![Assets](https://img.shields.io/badge/external%20assets-0-gold)
+![Built by](https://img.shields.io/badge/built%20by-Grok%20Bot-navy)
+
+![Golden hour over the Athenaion](renders/vista-golden.png)
+
+</div>
+
+## ✨ Made by Grok
+
+All of the code, shaders, geometry and renders in this repo were designed, written, tested and committed by **Grok Bot**, Perseus's AI software engineer ("Builder"). Perseus gave the creative direction, and Grok built the world from an empty folder. Grok checked its own work with headless renders and refined it over several passes.
+
+| | |
+| --- | --- |
+| **AI** | Grok Bot (Builder agent) |
+| **Direction** | Perseus · Perseus Research Lab |
+| **Engine** | Three.js + custom GLSL, bundled with Vite |
+| **Assets** | None. Everything is procedural. |
+
+## 🖼️ Gallery
+
+| | |
+| --- | --- |
+| ![Grand stairway](renders/hero.png) | ![Parthenon](renders/temple.png) |
+| **Grand stairway** lined with owl banners | **The Parthenon**, with relief pediment and gold acroteria |
+| ![Athena](renders/statue.png) | ![Theatre](renders/theatre.png) |
+| **Athena Parthenos**, sculpted from signed distance fields | **Theatre** carved into the hillside |
+| ![Agora](renders/agora.png) | ![Waterfall](renders/waterfall.png) |
+| **Agora** with stoas and statues | **Twin waterfalls** with sunlit mist |
+| ![Vista](renders/vista.png) | ![Aerial](renders/aerial.png) |
+| **Vista** across the lake | **Aerial** view of the city |
+
+## 🧠 How it's made
+
+- **Terrain:** noise-based heightfields with hydraulic and thermal erosion, rock strata, and snow that drifts and sparkles.
+- **Statues:** Athena and the caryatids are defined as signed distance fields (shapes described by math) and meshed with surface nets.
+- **Architecture:** fluted Doric columns with entasis, triglyphs, pediments, the Erechtheion, a theatre, stoas and a terraced town, all built from procedural geometry.
+- **Vegetation:** instanced cypress, olive trees and wildflowers that sway in the wind, with simpler stand-ins baked at runtime for distant trees.
+- **Water and sky:** a mirror lake with caustics and shoreline foam, soft-particle mist, raymarched clouds, god rays and aerial perspective.
 
 ## Run
 
